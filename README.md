@@ -1,1 +1,237 @@
-# tio
+# tio<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desafio de Raciocínio Lógico</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e1e2f, #2d2b42);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-card {
+            background-color: #252436;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: #4da6ff;
+        }
+
+        .level-badge {
+            display: inline-block;
+            background-color: #3d3b54;
+            color: #ffcc00;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .description {
+            font-size: 1rem;
+            color: #cccccc;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .puzzle-box {
+            background-color: #1a1926;
+            border: 2px dashed #4da6ff;
+            border-radius: 12px;
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid #3d3b54;
+            background-color: #1a1926;
+            color: #ffffff;
+            font-size: 1.1rem;
+            text-align: center;
+            outline: none;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: #4da6ff;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background-color: #4da6ff;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #3385ff;
+        }
+
+        .feedback {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1rem;
+            min-height: 24px;
+        }
+
+        .feedback.correct {
+            color: #00ff88;
+        }
+
+        .feedback.wrong {
+            color: #ff4d4d;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-card">
+        <h1>Desafio Lógico</h1>
+        <div id="levelBadge" class="level-badge">Nível 1 de 3</div>
+        
+        <p id="description" class="description">Descubra a lógica do padrão e complete a sequência.</p>
+
+        <div id="puzzleBox" class="puzzle-box">
+            <!-- Conteúdo do nível inserido via JavaScript -->
+        </div>
+
+        <input type="text" id="answerInput" placeholder="Digite sua resposta..." autocomplete="off">
+        <button id="actionBtn" onclick="checkAnswer()">Confirmar Resposta</button>
+
+        <div id="feedback" class="feedback"></div>
+    </div>
+
+    <script>
+        const levels = [
+            {
+                level: 1,
+                title: "Nível 1 de 3 — Sequência Numérica",
+                description: "Observe a sequência abaixo e descubra qual é o próximo número:",
+                puzzleHTML: "<span>2 &nbsp;➔&nbsp; 6 &nbsp;➔&nbsp; 18 &nbsp;➔&nbsp; 54 &nbsp;➔&nbsp; ?</span>",
+                answer: "162",
+                hint: "Dica: Cada número é multiplicado pelo mesmo valor."
+            },
+            {
+                level: 2,
+                title: "Nível 2 de 3 — Operação Oculta",
+                description: "O símbolo ★ segue uma regra lógica secreta entre dois números:",
+                puzzleHTML: "<div>2 ★ 3 = 10</div><div>3 ★ 4 = 21</div><div>4 ★ 5 = 36</div><div style='color: #4da6ff; margin-top: 8px;'>Qual é o valor de: 5 ★ 6 ?</div>",
+                answer: "55",
+                hint: "Dica: Some os dois números e depois multiplique pelo primeiro número."
+            },
+            {
+                level: 3,
+                title: "Nível 3 de 3 — Descodificação Lógica",
+                description: "Descubra o código secreto de 3 dígitos com base nas pistas:",
+                puzzleHTML: "<div style='text-align: left; font-size: 0.95rem; line-height: 1.6;'>" +
+                            "• <b>682</b> : Um número está certo e no lugar certo.<br>" +
+                            "• <b>614</b> : Um número está certo, mas no lugar errado.<br>" +
+                            "• <b>206</b> : Dois números estão certos, mas ambos no lugar errado.<br>" +
+                            "• <b>738</b> : Nenhum número está correto." +
+                            "</div>",
+                answer: "042",
+                hint: "Dica: Monte a posição de cada número eliminando os incorretos."
+            }
+        ];
+
+        let currentLevel = 0;
+
+        function loadLevel() {
+            const levelData = levels[currentLevel];
+            document.getElementById('levelBadge').innerText = levelData.title;
+            document.getElementById('description').innerText = levelData.description;
+            document.getElementById('puzzleBox').innerHTML = levelData.puzzleHTML;
+            document.getElementById('answerInput').value = '';
+            document.getElementById('feedback').innerText = '';
+            document.getElementById('feedback').className = 'feedback';
+            document.getElementById('actionBtn').innerText = 'Confirmar Resposta';
+            document.getElementById('actionBtn').setAttribute('onclick', 'checkAnswer()');
+            document.getElementById('answerInput').classList.remove('hidden');
+        }
+
+        function checkAnswer() {
+            const userInput = document.getElementById('answerInput').value.trim();
+            const feedback = document.getElementById('feedback');
+            const levelData = levels[currentLevel];
+
+            if (userInput === levelData.answer) {
+                feedback.className = 'feedback correct';
+                feedback.innerText = 'Correto! Excelente raciocínio.';
+                
+                setTimeout(() => {
+                    currentLevel++;
+                    if (currentLevel < levels.length) {
+                        loadLevel();
+                    } else {
+                        showVictory();
+                    }
+                }, 1500);
+            } else {
+                feedback.className = 'feedback wrong';
+                feedback.innerText = 'Incorreto. Tente novamente! ' + levelData.hint;
+            }
+        }
+
+        function showVictory() {
+            document.getElementById('levelBadge').innerText = "Parabéns!";
+            document.getElementById('description').innerText = "Você concluiu todos os níveis de raciocínio lógico!";
+            document.getElementById('puzzleBox').innerHTML = "<span style='font-size: 2rem;'>🎉 🧠 🏆</span><br><br>Sua mente está afiada!";
+            document.getElementById('answerInput').classList.add('hidden');
+            document.getElementById('actionBtn').innerText = 'Jogar Novamente';
+            document.getElementById('actionBtn').setAttribute('onclick', 'restartGame()');
+            document.getElementById('feedback').innerText = '';
+        }
+
+        function restartGame() {
+            currentLevel = 0;
+            loadLevel();
+        }
+
+        loadLevel();
+    </script>
+</body>
+</html>
